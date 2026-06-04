@@ -15,6 +15,35 @@ interface Employee {
   role: Role
 }
 
+// Type guard to validate role values from API
+const isValidRole = (value: unknown): value is Role => {
+  return value === 'employee' || value === 'admin'
+}
+
+// Safe parser for Employee objects from API
+const parseEmployee = (item: unknown): Employee | null => {
+  if (!item || typeof item !== 'object') return null
+  
+  const obj = item as Record<string, unknown>
+  const id = obj.id
+  const email = obj.email
+  const full_name = obj.full_name
+  const role = obj.role
+  
+  // Validate types
+  if (typeof id !== 'number') return null
+  if (typeof email !== 'string') return null
+  if (typeof full_name !== 'string' && full_name !== null) return null
+  if (!isValidRole(role)) return null
+  
+  return { 
+    id, 
+    email, 
+    full_name: full_name as string | null, 
+    role 
+  }
+}
+
 export default function SettingsPage() {
   const { user, loading, error } = useAuthUser()
   const [activeTab, setActiveTab] = useState<'account' | 'security' | 'preferences' | 'employees'>('account')
@@ -58,7 +87,11 @@ export default function SettingsPage() {
         throw new Error('Failed to fetch employees')
       }
 
-      const data: Employee[] = await response.json()
+      const rawData = await response.json()
+      // Parse and validate employee data from API
+      const data: Employee[] = (Array.isArray(rawData) ? rawData : [])
+        .map(parseEmployee)
+        .filter((employee): employee is Employee => employee !== null)
       const employeesList = data.filter((u) => u.role === 'employee')
       setEmployees(employeesList)
     } catch (err) {

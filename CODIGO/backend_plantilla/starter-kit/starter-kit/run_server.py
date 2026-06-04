@@ -3,10 +3,14 @@ import os
 import sys
 import subprocess
 
+# Change to the directory containing this script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_dir)
+
 # Get host and port from environment variables
 host = os.getenv("HOST", "127.0.0.1")  # Use 0.0.0.0 for Docker/Railway
 port = os.getenv("PORT", "8000")
-reload_mode = os.getenv("RELOAD", "true").lower() == "true"
+reload_mode = os.getenv("RELOAD", "false").lower() == "true"
 workers = int(os.getenv("WORKERS", "1"))
 
 # Build uvicorn command arguments
