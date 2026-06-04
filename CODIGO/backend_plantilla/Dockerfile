@@ -49,9 +49,9 @@ COPY starter-kit/starter-kit/ .
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# Health check
+# Health check (use environment variable for host, default to 0.0.0.0)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
+    CMD curl -f http://127.0.0.1:${PORT:-8000}/health || exit 1
 
 # Expose port (informational, Railway will override)
 EXPOSE 8000

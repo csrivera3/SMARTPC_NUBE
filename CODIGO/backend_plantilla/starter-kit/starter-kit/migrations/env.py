@@ -1,4 +1,5 @@
 from logging.config import fileConfig
+import os
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -13,9 +14,20 @@ from app.core.config import Settings
 
 settings = Settings()
 
+# Get DATABASE_URL from settings with error handling
+database_url = os.getenv("DATABASE_URL", "")
+if not database_url:
+    raise ValueError(
+        "DATABASE_URL environment variable is required for migrations. "
+        "Set it from your hosting provider (e.g., Railway PostgreSQL plugin) or .env file."
+    )
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Set sqlalchemy.url in config
+config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -46,7 +58,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = settings.DATABASE_URL
+    url = database_url
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -65,7 +77,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = create_engine(settings.DATABASE_URL)
+    connectable = create_engine(database_url)
 
     with connectable.connect() as connection:
         context.configure(
