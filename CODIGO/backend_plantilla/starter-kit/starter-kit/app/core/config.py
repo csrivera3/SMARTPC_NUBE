@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "info")
+    SKIP_DB_ON_STARTUP: bool = os.getenv("SKIP_DB_ON_STARTUP", "false").lower() == "true"
     
     # Base de datos - Soporta DATABASE_URL (Railway) o credenciales individuales
     DATABASE_URL: str = os.getenv(
