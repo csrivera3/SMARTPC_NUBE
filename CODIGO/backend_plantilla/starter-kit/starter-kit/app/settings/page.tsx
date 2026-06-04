@@ -6,11 +6,13 @@ import { LoadingSpinner } from '@components/dashboard/Loaders'
 import { ErrorMessage } from '@components/dashboard/ErrorMessage'
 import { RoleBadge } from '@components/dashboard/RoleBadge'
 
+type Role = 'employee' | 'admin'
+
 interface Employee {
   id: number
   email: string
   full_name: string | null
-  role: string
+  role: Role
 }
 
 export default function SettingsPage() {
@@ -56,9 +58,8 @@ export default function SettingsPage() {
         throw new Error('Failed to fetch employees')
       }
 
-      const data = await response.json()
-      // Filter by employee role
-      const employeesList = data.filter((u: Employee) => u.role === 'employee')
+      const data: Employee[] = await response.json()
+      const employeesList = data.filter((u) => u.role === 'employee')
       setEmployees(employeesList)
     } catch (err) {
       setEmployeesError(err instanceof Error ? err.message : 'An error occurred')
@@ -72,7 +73,6 @@ export default function SettingsPage() {
     setCreateError(null)
     setCreateSuccess(false)
 
-    // Validation
     if (!createForm.email || !createForm.full_name || !createForm.password || !createForm.confirmPassword) {
       setCreateError('All fields are required')
       return
@@ -99,7 +99,7 @@ export default function SettingsPage() {
           email: createForm.email,
           full_name: createForm.full_name,
           password: createForm.password,
-          role: 'employee',
+          role: 'employee' satisfies Role,
         }),
       })
 
@@ -137,7 +137,7 @@ export default function SettingsPage() {
         throw new Error('Failed to delete employee')
       }
 
-      setEmployees(employees.filter(e => e.id !== employeeId))
+      setEmployees(employees.filter((e) => e.id !== employeeId))
       setDeleteConfirm(null)
     } catch (err) {
       setEmployeesError(err instanceof Error ? err.message : 'An error occurred')
@@ -159,7 +159,6 @@ export default function SettingsPage() {
     setPasswordError(null)
     setPasswordSuccess(false)
 
-    // Validation
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
       setPasswordError('All fields are required')
       return
@@ -207,7 +206,6 @@ export default function SettingsPage() {
     }
   }
 
-  // Show loading state
   if (loading) {
     return (
       <div className='p-6 max-w-4xl mx-auto'>
@@ -216,7 +214,6 @@ export default function SettingsPage() {
     )
   }
 
-  // Show error state
   if (error) {
     return (
       <div className='p-6 max-w-4xl mx-auto'>
@@ -225,7 +222,6 @@ export default function SettingsPage() {
     )
   }
 
-  // Show error if user is not found
   if (!user) {
     return (
       <div className='p-6 max-w-4xl mx-auto'>
@@ -299,7 +295,7 @@ export default function SettingsPage() {
                   <label className='block text-sm font-medium text-slate-700 mb-2'>Full Name</label>
                   <input
                     type='text'
-                    defaultValue={user.full_name}
+                    defaultValue={user.full_name ?? ''}
                     className='w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500'
                     disabled
                   />
@@ -318,7 +314,7 @@ export default function SettingsPage() {
               <div>
                 <label className='block text-sm font-medium text-slate-700 mb-2'>User Role</label>
                 <div className='flex items-center gap-2'>
-                  <RoleBadge role={user.role} />
+                  <RoleBadge role={user.role as Role} />
                   <span className='text-sm text-slate-600'>(System-assigned)</span>
                 </div>
               </div>
@@ -571,7 +567,7 @@ export default function SettingsPage() {
                     {employees.map((employee) => (
                       <tr key={employee.id} className='border-b border-slate-200 hover:bg-slate-50 transition-colors'>
                         <td className='py-3 px-4'>
-                          <p className='font-medium text-slate-900'>{employee.full_name || 'N/A'}</p>
+                          <p className='font-medium text-slate-900'>{employee.full_name ?? 'N/A'}</p>
                         </td>
                         <td className='py-3 px-4'>
                           <p className='text-slate-600'>{employee.email}</p>
