@@ -38,12 +38,20 @@ async def lifespan(app: FastAPI):
     """Startup and shutdown event handler"""
     # Startup
     logger.info(f"Starting application in {settings.ENVIRONMENT} environment")
+    logger.info(f"Database URL: {settings.DATABASE_URL[:50]}..." if settings.DATABASE_URL else "DATABASE_URL not configured")
+    
+    db_initialized = False
     try:
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables created/verified successfully")
+        db_initialized = True
     except Exception as e:
-        logger.error(f"Error during startup: {e}")
-        raise
+        logger.warning(f"Database connection warning during startup: {e}")
+        logger.warning("Application will start, but database operations may fail")
+        logger.warning("Make sure DATABASE_URL environment variable is properly configured")
+    
+    # Store initialization status for health checks
+    app.state.db_initialized = db_initialized
     
     yield
     
@@ -184,10 +192,17 @@ async def root():
 @app.get("/health", tags=["health"])
 async def health():
     """Basic health check - Always returns 200 if app is running"""
+    db_status = "unknown"
+    
+    # Check if DB was initialized at startup
+    if hasattr(app.state, 'db_initialized'):
+        db_status = "initialized" if app.state.db_initialized else "unavailable"
+    
     return {
         "status": "ok",
         "service": "MesaPass API",
-        "environment": settings.ENVIRONMENT
+        "environment": settings.ENVIRONMENT,
+        "database_status": db_status
     }
 
 
@@ -198,7 +213,12 @@ async def health_deep():
         "status": "ok",
         "service": "MesaPass API",
         "environment": settings.ENVIRONMENT,
-        "database": "unknown"
+        "database": "unknown",
+        "requirements": {
+            "database_url_set": bool(settings.DATABASE_URL),
+            "debug_mode": settings.DEBUG,
+            "environment": settings.ENVIRONMENT
+        }
     }
     
     try:
@@ -206,11 +226,12 @@ async def health_deep():
         with SessionLocal() as session:
             session.execute(text("SELECT 1"))
             health_status["database"] = "connected"
-            logger.info("Database health check passed")
+            logger.debug("Database health check passed")
     except Exception as e:
         health_status["database"] = "disconnected"
         health_status["status"] = "degraded"
-        logger.error(f"Database health check failed: {e}")
+        health_status["database_error"] = str(e)[:100]
+        logger.warning(f"Database health check failed: {e}")
     
     return health_status
 
