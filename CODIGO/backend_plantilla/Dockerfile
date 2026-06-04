@@ -5,10 +5,13 @@ FROM python:3.12-slim as builder
 
 WORKDIR /build
 
-# Install system dependencies for building
+# Install system dependencies for building (including image processing libraries)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    python3-dev \
     postgresql-client \
+    libjpeg-dev \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
@@ -21,10 +24,12 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install only runtime dependencies
+# Install only runtime dependencies (including runtime libraries for image processing)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     curl \
+    libjpeg62-turbo \
+    zlib1g \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python dependencies from builder
